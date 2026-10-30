@@ -1,5 +1,5 @@
 // ============================================================
-// Anime Tracker v2 - Auth + Lista por usuario + Import masivo
+// Anime Tracker v2.1 - Auth + nombre + categorías auto + Jikan
 // ============================================================
 
 const { createClient } = supabase;
@@ -10,7 +10,48 @@ let categories = [];
 let currentEditId = null;
 let currentUser = null;
 let isSaving = false;
-let authMode = 'login'; // 'login' | 'signup'
+let authMode = 'login';
+
+// Mapeo de géneros Jikan → nuestras categorías
+const GENRE_MAP = {
+  'Action': 'Acción',
+  'Adventure': 'Acción',
+  'Comedy': 'Comedia',
+  'Drama': 'Seinen',
+  'Ecchi': 'Hentai',
+  'Erotica': 'Hentai',
+  'Fantasy': 'Isekai',
+  'Hentai': 'Hentai',
+  'Horror': 'Horror',
+  'Mecha': 'Mecha',
+  'Romance': 'Romance',
+  'School': 'Slice of Life',
+  'Sci-Fi': 'Mecha',
+  'Slice of Life': 'Slice of Life',
+  'Sports': 'Deportes',
+  'Supernatural': 'Horror',
+  'Suspense': 'Seinen',
+  'Boys Love': 'Otros',
+  'Girls Love': 'Otros',
+  'Gourmet': 'Slice of Life',
+  'Award Winning': 'Otros',
+};
+
+function pickCategory(genres, isHentai) {
+  if (isHentai) return 'Hentai';
+  if (!genres || !genres.length) return 'Sin categoría';
+  for (const g of genres) {
+    const mapped = GENRE_MAP[g.name] || GENRE_MAP[g];
+    if (mapped) return mapped;
+  }
+  // fallback por nombre parcial
+  const names = genres.map(g => (g.name || g || '').toLowerCase()).join(' ');
+  if (names.includes('shounen') || names.includes('shonen')) return 'Shonen';
+  if (names.includes('seinen')) return 'Seinen';
+  if (names.includes('shoujo') || names.includes('shojo')) return 'Shojo';
+  if (names.includes('isekai')) return 'Isekai';
+  return 'Otros';
+}
 
 // ========== Utils ==========
 function toast(msg, icon = '✅') {
@@ -33,6 +74,17 @@ function starsFromRating(r) {
   return '★'.repeat(full) + '☆'.repeat(5 - full);
 }
 
+function getDisplayName() {
+  const meta = currentUser?.user_metadata || {};
+  return meta.display_name || meta.full_name || meta.name || null;
+}
+
+function updateGreeting() {
+  const name = getDisplayName();
+  const el = document.getElementById('userGreeting');
+  if (el) el.textContent = name ? `Hola, ${name}` : 'Hola';
+}
+
 // ========== Auth ==========
 function showAuth() {
   document.getElementById('authScreen').classList.remove('hidden');
@@ -42,7 +94,7 @@ function showAuth() {
 function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('userEmail').textContent = currentUser?.email || '—';
+  updateGreeting();
 }
 
 function setAuthMode(mode) {
@@ -50,14 +102,17 @@ function setAuthMode(mode) {
   const loginBtn = document.getElementById('tabLogin');
   const signupBtn = document.getElementById('tabSignup');
   const submit = document.getElementById('authSubmit');
+  const nameField = document.getElementById('nameField');
   if (mode === 'login') {
     loginBtn.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent-purple/20 text-accent-purple border border-accent-purple/30';
     signupBtn.className = 'flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition';
     submit.textContent = 'Entrar';
+    nameField.classList.add('hidden');
   } else {
     signupBtn.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent-purple/20 text-accent-purple border border-accent-purple/30';
     loginBtn.className = 'flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition';
     submit.textContent = 'Crear cuenta';
+    nameField.classList.remove('hidden');
   }
   document.getElementById('authError').classList.add('hidden');
 }
@@ -69,6 +124,7 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
+  const name = document.getElementById('authName')?.value.trim() || '';
   const errEl = document.getElementById('authError');
   const btn = document.getElementById('authSubmit');
   errEl.classList.add('hidden');
@@ -81,10 +137,14 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       if (error) throw error;
       currentUser = data.user;
     } else {
-      const { data, error } = await sb.auth.signUp({ email, password });
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name || email.split('@')[0] } }
+      });
       if (error) throw error;
       if (data.user && !data.session) {
-        errEl.textContent = 'Revisa tu email para confirmar la cuenta (o desactiva confirmación en Supabase).';
+        errEl.textContent = 'Revisa tu email para confirmar la cuenta (o desactiva confirmación en Supabase → Auth → Settings).';
         errEl.classList.remove('hidden');
         btn.disabled = false;
         btn.textContent = 'Crear cuenta';
@@ -104,31 +164,78 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('btnLogout').addEventListener('click', async () => {
+  if (!confirm('¿Cerrar sesión?')) return;
   await sb.auth.signOut();
   currentUser = null;
   animes = [];
   showAuth();
 });
 
-// ========== Jikan ==========
+// Profile
+document.getElementById('btnProfile')?.addEventListener('click', () => {
+  document.getElementById('profileName').value = getDisplayName() || '';
+  document.getElementById('profileModal').classList.add('open');
+});
+document.getElementById('profileClose')?.addEventListener('click', () => {
+  document.getElementById('profileModal').classList.remove('open');
+});
+document.getElementById('profileModal')?.addEventListener('click', e => {
+  if (e.target.id === 'profileModal') document.getElementById('profileModal').classList.remove('open');
+});
+document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
+  const name = document.getElementById('profileName').value.trim();
+  if (!name) { toast('Escribe un nombre', '❌'); return; }
+  const { data, error } = await sb.auth.updateUser({ data: { display_name: name } });
+  if (error) { toast(error.message, '❌'); return; }
+  currentUser = data.user;
+  updateGreeting();
+  document.getElementById('profileModal').classList.remove('open');
+  toast('Nombre actualizado');
+});
+
+// ========== Jikan (portadas + categorías + datos) ==========
 async function fetchJikan(title) {
   try {
     const res = await fetch(
-      `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(title)}&limit=1`,
-      { headers: { 'User-Agent': 'AnimeTracker/2.0' } }
+      `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(title)}&limit=3`,
+      { headers: { 'User-Agent': 'AnimeTracker/2.1' } }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    if (!data.data || !data.data[0]) return null;
-    const a = data.data[0];
+    if (!data.data || !data.data.length) return null;
+
+    // Mejor match: título más parecido
+    const q = title.toLowerCase();
+    let best = data.data[0];
+    for (const a of data.data) {
+      const t = (a.title || '').toLowerCase();
+      const te = (a.title_english || '').toLowerCase();
+      if (t === q || te === q || t.includes(q) || q.includes(t.split(' ')[0])) {
+        best = a;
+        break;
+      }
+    }
+
+    const genres = best.genres || [];
+    const themes = best.themes || [];
+    const demographics = best.demographics || [];
+    const allGenres = [...genres, ...themes, ...demographics];
+
+    const isHentai = allGenres.some(g =>
+      ['Hentai', 'Erotica', 'Ecchi'].includes(g.name)
+    ) || (best.rating || '').toLowerCase().includes('rx');
+
     return {
-      cover_url: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || null,
-      mal_id: a.mal_id,
-      synopsis: a.synopsis ? a.synopsis.slice(0, 600) : null,
-      score: a.score,
-      episodes: a.episodes,
-      year: a.year || a.aired?.prop?.from?.year || null,
-      type: a.type,
+      cover_url: best.images?.jpg?.large_image_url || best.images?.jpg?.image_url || null,
+      mal_id: best.mal_id,
+      synopsis: best.synopsis ? best.synopsis.slice(0, 600) : null,
+      score: best.score,
+      episodes: best.episodes,
+      year: best.year || best.aired?.prop?.from?.year || null,
+      type: best.type,
+      category: pickCategory(allGenres, isHentai),
+      is_hentai: isHentai,
+      genres: allGenres.map(g => g.name).join(', '),
     };
   } catch {
     return null;
@@ -165,19 +272,50 @@ async function loadData() {
 
 async function saveAnime(payload) {
   let extra = {};
-  if (!payload.id) {
+  // Siempre enriquecer si es nuevo o no tiene portada
+  if (!payload.id || !payload._skipJikan) {
     const jikan = await fetchJikan(payload.title);
-    if (jikan) extra = jikan;
+    if (jikan) {
+      extra = {
+        cover_url: jikan.cover_url,
+        mal_id: jikan.mal_id,
+        synopsis: jikan.synopsis,
+        score: jikan.score,
+        episodes: jikan.episodes,
+        year: jikan.year,
+        type: jikan.type,
+      };
+      // Categoría automática solo si no eligió una o es "Sin categoría"
+      if (!payload.category || payload.category === 'Sin categoría') {
+        extra.category = jikan.category;
+      }
+      if (jikan.is_hentai && payload.is_hentai === undefined) {
+        extra.is_hentai = true;
+      }
+    }
   }
+
   const row = {
     title: payload.title,
-    category: payload.category || 'Sin categoría',
-    is_hentai: !!payload.is_hentai,
+    category: extra.category || payload.category || 'Sin categoría',
+    is_hentai: payload.is_hentai ?? extra.is_hentai ?? false,
     rating: Number(payload.rating) || 0,
     notes: payload.notes || null,
     user_id: currentUser.id,
     ...extra,
   };
+
+  // No sobrescribir cover si ya tenía y no trajimos nueva
+  if (payload.id && !extra.cover_url) {
+    delete row.cover_url;
+    delete row.mal_id;
+    delete row.synopsis;
+    delete row.score;
+    delete row.episodes;
+    delete row.year;
+    delete row.type;
+  }
+
   if (payload.id) {
     const { error } = await sb.from('animes').update(row).eq('id', payload.id).eq('user_id', currentUser.id);
     if (error) throw error;
@@ -196,44 +334,48 @@ async function deleteAnime(id) {
 }
 
 async function refreshMissingCovers() {
-  const missing = animes.filter(a => !a.cover_url).slice(0, 12);
+  const missing = animes.filter(a => !a.cover_url || a.category === 'Sin categoría').slice(0, 15);
   if (missing.length === 0) {
-    toast('Todas las portadas están listas', '✨');
+    toast('Todo está actualizado', '✨');
     return;
   }
-  toast(`Actualizando ${missing.length} portadas...`, '🖼️');
+  toast(`Enriqueciendo ${missing.length} animes...`, '🖼️');
   let updated = 0;
   for (const a of missing) {
     try {
-      await new Promise(r => setTimeout(r, 450));
+      await new Promise(r => setTimeout(r, 500));
       const jikan = await fetchJikan(a.title);
-      if (jikan?.cover_url) {
-        const { error } = await sb.from('animes').update({
-          cover_url: jikan.cover_url,
-          mal_id: jikan.mal_id,
-          synopsis: a.synopsis || jikan.synopsis,
-          score: a.score ?? jikan.score,
-          episodes: a.episodes ?? jikan.episodes,
-          year: a.year ?? jikan.year,
-          type: a.type || jikan.type,
-        }).eq('id', a.id).eq('user_id', currentUser.id);
+      if (!jikan) continue;
+      const patch = {};
+      if (!a.cover_url && jikan.cover_url) patch.cover_url = jikan.cover_url;
+      if (jikan.mal_id) patch.mal_id = jikan.mal_id;
+      if (!a.synopsis && jikan.synopsis) patch.synopsis = jikan.synopsis;
+      if (a.score == null && jikan.score != null) patch.score = jikan.score;
+      if (!a.episodes && jikan.episodes) patch.episodes = jikan.episodes;
+      if (!a.year && jikan.year) patch.year = jikan.year;
+      if (!a.type && jikan.type) patch.type = jikan.type;
+      if ((!a.category || a.category === 'Sin categoría') && jikan.category) {
+        patch.category = jikan.category;
+      }
+      if (jikan.is_hentai && !a.is_hentai) patch.is_hentai = true;
+
+      if (Object.keys(patch).length) {
+        const { error } = await sb.from('animes').update(patch).eq('id', a.id).eq('user_id', currentUser.id);
         if (!error) updated++;
       }
     } catch (_) {}
   }
-  toast(`Actualizadas ${updated} de ${missing.length} portadas`, '✨');
+  toast(`Actualizados ${updated} animes (portadas + categorías)`, '✨');
   await loadData();
 }
 
-// ========== Bulk Import ==========
+// ========== Bulk Import (con Jikan opcional) ==========
 async function doImport() {
   const text = document.getElementById('importText').value.trim();
-  if (!text) {
-    toast('Pega al menos un título', '❌');
-    return;
-  }
+  if (!text) { toast('Pega al menos un título', '❌'); return; }
+
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const category = document.getElementById('importCategory').value || 'Sin categoría';
+  const defaultCat = document.getElementById('importCategory').value || 'Sin categoría';
   const progress = document.getElementById('importProgress');
   const status = document.getElementById('importStatus');
   const bar = document.getElementById('importBar');
@@ -244,30 +386,27 @@ async function doImport() {
   let ok = 0, skip = 0, fail = 0;
 
   for (let i = 0; i < lines.length; i++) {
-    let title = lines[i];
-    // Quitar numeración tipo "1: Title" o "1. Title"
-    title = title.replace(/^\d+[:.\-\)]\s*/, '').trim();
+    let title = lines[i].replace(/^\d+[:.\-\)]\s*/, '').trim();
     let isHentai = false;
-    if (/\(h\)\s*$/i.test(title) || /\(H\)\s*$/.test(title)) {
+    if (/\([hH]\)\s*$/.test(title)) {
       isHentai = true;
       title = title.replace(/\s*\([hH]\)\s*$/, '').trim();
     }
     if (!title) continue;
 
-    status.textContent = `Importando ${i + 1}/${lines.length}: ${title.slice(0, 30)}...`;
+    status.textContent = `Importando ${i + 1}/${lines.length}: ${title.slice(0, 35)}...`;
     bar.style.width = `${Math.round(((i + 1) / lines.length) * 100)}%`;
 
     try {
-      // Check if already exists for this user
-      const exists = animes.some(a => a.title.toLowerCase() === title.toLowerCase());
-      if (exists) {
+      if (animes.some(a => a.title.toLowerCase() === title.toLowerCase())) {
         skip++;
         continue;
       }
-      // Insert without waiting for Jikan to speed up (covers later with 🖼️)
+
+      // Insert rápido sin Jikan (luego el botón 🖼️ enriquece)
       const { error } = await sb.from('animes').insert({
         title,
-        category,
+        category: isHentai ? 'Hentai' : defaultCat,
         is_hentai: isHentai,
         rating: 0,
         user_id: currentUser.id,
@@ -275,14 +414,11 @@ async function doImport() {
       if (error) {
         if (error.code === '23505') skip++;
         else fail++;
-      } else {
-        ok++;
-      }
+      } else ok++;
     } catch {
       fail++;
     }
-    // Pequeña pausa para no saturar
-    if (i % 5 === 0) await new Promise(r => setTimeout(r, 50));
+    if (i % 8 === 0) await new Promise(r => setTimeout(r, 30));
   }
 
   btn.disabled = false;
@@ -291,6 +427,10 @@ async function doImport() {
   document.getElementById('importModal').classList.remove('open');
   document.getElementById('importText').value = '';
   await loadData();
+
+  if (ok > 0) {
+    toast('Pulsa 🖼️ para cargar portadas y categorías automáticas', '💡');
+  }
 }
 
 // ========== Render ==========
@@ -481,6 +621,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal();
     closeImport();
+    document.getElementById('profileModal')?.classList.remove('open');
   }
 });
 

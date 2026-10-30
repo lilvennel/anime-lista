@@ -96,7 +96,7 @@
 }
 
 /* Modal open state */
-#modal.open, #importModal.open {
+#modal.open, #importModal.open, #profileModal.open {
   display: flex;
 }
 
