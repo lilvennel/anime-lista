@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Mi lista personal de animes vistos - Anime Tracker" />
+  <meta name="description" content="Mi lista personal de animes - Anime Tracker" />
   <title>Anime Tracker • Mi Lista</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍥</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,24 +14,10 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Outfit', 'Noto Sans JP', 'system-ui', 'sans-serif'],
-          },
+          fontFamily: { sans: ['Outfit', 'Noto Sans JP', 'system-ui', 'sans-serif'] },
           colors: {
-            dark: {
-              950: '#06060a',
-              900: '#0a0a0f',
-              800: '#12121a',
-              700: '#1a1a25',
-              600: '#252533',
-              500: '#2f2f40',
-            },
-            accent: {
-              pink: '#ff6b9d',
-              purple: '#a855f7',
-              cyan: '#22d3ee',
-              violet: '#8b5cf6',
-            }
+            dark: { 950: '#06060a', 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a25', 600: '#252533', 500: '#2f2f40' },
+            accent: { pink: '#ff6b9d', purple: '#a855f7', cyan: '#22d3ee', violet: '#8b5cf6' }
           },
           animation: {
             'fade-in': 'fadeIn 0.35s ease-out',
@@ -48,114 +34,131 @@
     }
   </script>
   <link rel="stylesheet" href="./css/styles.css" />
-  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-dark-950 text-gray-100 min-h-screen font-sans antialiased">
-  <!-- Ambient background -->
   <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
     <div class="absolute -top-40 -right-40 w-[500px] h-[500px] bg-accent-purple/10 rounded-full blur-[100px]"></div>
     <div class="absolute top-1/3 -left-32 w-96 h-96 bg-accent-pink/8 rounded-full blur-[90px]"></div>
     <div class="absolute bottom-10 right-1/4 w-80 h-80 bg-accent-cyan/6 rounded-full blur-[80px]"></div>
   </div>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-50 backdrop-blur-2xl bg-dark-950/75 border-b border-dark-600/40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent-pink via-accent-purple to-accent-violet flex items-center justify-center text-2xl shadow-lg shadow-accent-purple/30">
-            🍥
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-dark-950">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-pink via-accent-purple to-accent-violet items-center justify-center text-3xl shadow-lg shadow-accent-purple/30 mb-4">🍥</div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Anime Tracker</h1>
+        <p class="text-gray-500 text-sm mt-1">Tu lista personal de animes</p>
+      </div>
+      <div class="bg-dark-800 border border-dark-600/80 rounded-2xl p-6 shadow-2xl">
+        <div class="flex gap-2 mb-6">
+          <button id="tabLogin" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent-purple/20 text-accent-purple border border-accent-purple/30">Iniciar sesión</button>
+          <button id="tabSignup" class="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition">Crear cuenta</button>
+        </div>
+        <form id="authForm" class="space-y-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-1.5">Email</label>
+            <input type="email" id="authEmail" required autocomplete="email"
+              class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40"
+              placeholder="tu@email.com" />
           </div>
           <div>
-            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-              Anime Tracker
-            </h1>
-            <p class="text-[11px] text-gray-500 font-medium tracking-wide">Mis animes vistos</p>
+            <label class="block text-sm text-gray-400 mb-1.5">Contraseña</label>
+            <input type="password" id="authPassword" required minlength="6" autocomplete="current-password"
+              class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40"
+              placeholder="Mínimo 6 caracteres" />
           </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2.5">
-          <div class="relative flex-1 sm:flex-none min-w-[180px] sm:min-w-[220px]">
-            <input
-              type="search"
-              id="searchInput"
-              placeholder="Buscar por título..."
-              autocomplete="off"
-              class="w-full bg-dark-800/80 border border-dark-600/80 rounded-xl px-4 py-2.5 pl-10 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-purple/40 focus:border-accent-purple/50 transition"
-            />
-            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-          </div>
-
-          <select id="categoryFilter" class="bg-dark-800/80 border border-dark-600/80 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 appearance-none cursor-pointer min-w-[140px]">
-            <option value="">Todas las categorías</option>
-          </select>
-
-          <select id="hentaiFilter" class="bg-dark-800/80 border border-dark-600/80 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 appearance-none cursor-pointer">
-            <option value="">Todo</option>
-            <option value="false">Solo normal</option>
-            <option value="true">Solo hentai</option>
-          </select>
-
-          <button id="btnAdd" class="bg-gradient-to-r from-accent-pink to-accent-purple hover:opacity-90 active:scale-[0.98] text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg shadow-accent-purple/25 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-            Agregar
+          <p id="authError" class="text-red-400 text-sm hidden"></p>
+          <button type="submit" id="authSubmit"
+            class="w-full bg-gradient-to-r from-accent-pink to-accent-purple text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-lg shadow-accent-purple/20">
+            Entrar
           </button>
-
-          <button id="btnRefreshCovers" title="Actualizar portadas faltantes (Jikan)" class="bg-dark-800/80 hover:bg-dark-700 border border-dark-600/80 text-gray-300 hover:text-white px-3 py-2.5 rounded-xl text-sm transition" >
-            🖼️
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Stats -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-    <div class="flex flex-wrap gap-3 text-sm">
-      <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
-        <span class="text-accent-cyan font-bold text-base" id="statTotal">0</span>
-        <span class="text-gray-400">animes</span>
-      </div>
-      <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
-        <span class="text-accent-pink font-bold text-base" id="statHentai">0</span>
-        <span class="text-gray-400">hentai</span>
-      </div>
-      <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
-        <span class="text-accent-purple font-bold text-base" id="statWithCover">0</span>
-        <span class="text-gray-400">con portada</span>
-      </div>
-      <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm ml-auto">
-        <span class="text-amber-400 font-bold text-base" id="statAvgRating">—</span>
-        <span class="text-gray-400">rating prom.</span>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Grid -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
-    <div id="animeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
-      <!-- cards -->
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <header class="sticky top-0 z-50 backdrop-blur-2xl bg-dark-950/75 border-b border-dark-600/40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent-pink via-accent-purple to-accent-violet flex items-center justify-center text-2xl shadow-lg shadow-accent-purple/30">🍥</div>
+            <div>
+              <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">Anime Tracker</h1>
+              <p class="text-[11px] text-gray-500 font-medium" id="userEmail">—</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="relative flex-1 sm:flex-none min-w-[160px] sm:min-w-[200px]">
+              <input type="search" id="searchInput" placeholder="Buscar..." autocomplete="off"
+                class="w-full bg-dark-800/80 border border-dark-600/80 rounded-xl px-4 py-2.5 pl-10 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-purple/40 transition" />
+              <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+            <select id="categoryFilter" class="bg-dark-800/80 border border-dark-600/80 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 appearance-none cursor-pointer min-w-[130px]">
+              <option value="">Todas</option>
+            </select>
+            <select id="hentaiFilter" class="bg-dark-800/80 border border-dark-600/80 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 appearance-none cursor-pointer">
+              <option value="">Todo</option>
+              <option value="false">Normal</option>
+              <option value="true">Hentai</option>
+            </select>
+            <button id="btnAdd" class="bg-gradient-to-r from-accent-pink to-accent-purple hover:opacity-90 text-white px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1.5 shadow-lg shadow-accent-purple/25 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+              Agregar
+            </button>
+            <button id="btnImport" title="Importar lista" class="bg-dark-800/80 hover:bg-dark-700 border border-dark-600/80 text-gray-300 hover:text-white px-3 py-2.5 rounded-xl text-sm transition">📥</button>
+            <button id="btnRefreshCovers" title="Actualizar portadas" class="bg-dark-800/80 hover:bg-dark-700 border border-dark-600/80 text-gray-300 hover:text-white px-3 py-2.5 rounded-xl text-sm transition">🖼️</button>
+            <button id="btnLogout" title="Cerrar sesión" class="bg-dark-800/80 hover:bg-red-500/20 border border-dark-600/80 hover:border-red-500/40 text-gray-400 hover:text-red-400 px-3 py-2.5 rounded-xl text-sm transition">⏻</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div class="flex flex-wrap gap-3 text-sm">
+        <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5">
+          <span class="text-accent-cyan font-bold text-base" id="statTotal">0</span>
+          <span class="text-gray-400">animes</span>
+        </div>
+        <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5">
+          <span class="text-accent-pink font-bold text-base" id="statHentai">0</span>
+          <span class="text-gray-400">hentai</span>
+        </div>
+        <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5">
+          <span class="text-accent-purple font-bold text-base" id="statWithCover">0</span>
+          <span class="text-gray-400">con portada</span>
+        </div>
+        <div class="bg-dark-800/60 border border-dark-600/40 rounded-xl px-4 py-2 flex items-center gap-2.5 ml-auto">
+          <span class="text-amber-400 font-bold text-base" id="statAvgRating">—</span>
+          <span class="text-gray-400">rating prom.</span>
+        </div>
+      </div>
     </div>
 
-    <div id="emptyState" class="hidden text-center py-24">
-      <div class="text-7xl mb-5 opacity-80">🎌</div>
-      <p class="text-gray-300 text-lg font-medium">No se encontraron animes</p>
-      <p class="text-gray-500 text-sm mt-2 max-w-xs mx-auto">Prueba cambiando los filtros o agrega tu primer anime</p>
-      <button id="btnEmptyAdd" class="mt-6 bg-gradient-to-r from-accent-pink to-accent-purple text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition">
-        + Agregar anime
-      </button>
-    </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+      <div id="animeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5"></div>
+      <div id="emptyState" class="hidden text-center py-24">
+        <div class="text-7xl mb-5 opacity-80">🎌</div>
+        <p class="text-gray-300 text-lg font-medium">No se encontraron animes</p>
+        <p class="text-gray-500 text-sm mt-2">Agrega uno o importa tu lista completa</p>
+        <div class="flex gap-3 justify-center mt-6">
+          <button id="btnEmptyAdd" class="bg-gradient-to-r from-accent-pink to-accent-purple text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition">+ Agregar</button>
+          <button id="btnEmptyImport" class="bg-dark-700 border border-dark-600 text-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-dark-600 transition">📥 Importar lista</button>
+        </div>
+      </div>
+      <div id="loadingState" class="text-center py-24">
+        <div class="inline-block w-11 h-11 border-[3px] border-accent-purple/30 border-t-accent-purple rounded-full animate-spin"></div>
+        <p class="text-gray-400 mt-5 text-sm">Cargando tu lista...</p>
+      </div>
+    </main>
+  </div>
 
-    <div id="loadingState" class="text-center py-24">
-      <div class="inline-block w-11 h-11 border-[3px] border-accent-purple/30 border-t-accent-purple rounded-full animate-spin"></div>
-      <p class="text-gray-400 mt-5 text-sm">Cargando tu lista...</p>
-    </div>
-  </main>
-
-  <!-- Modal: Agregar / Editar -->
+  <!-- Modal Edit -->
   <div id="modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md">
     <div class="bg-dark-800 border border-dark-600/80 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in overflow-hidden max-h-[92vh] flex flex-col">
       <div class="px-6 py-4 border-b border-dark-600/60 flex items-center justify-between shrink-0">
@@ -164,17 +167,12 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-
       <form id="animeForm" class="p-6 space-y-4 overflow-y-auto">
         <input type="hidden" id="animeId" />
-
         <div>
           <label class="block text-sm text-gray-400 mb-1.5 font-medium">Título *</label>
-          <input type="text" id="formTitle" required
-            class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 focus:border-accent-purple/50 transition"
-            placeholder="Ej: Shingeki no Kyojin" />
+          <input type="text" id="formTitle" required class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40" placeholder="Ej: Shingeki no Kyojin" />
         </div>
-
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm text-gray-400 mb-1.5 font-medium">Categoría</label>
@@ -182,29 +180,19 @@
           </div>
           <div>
             <label class="block text-sm text-gray-400 mb-1.5 font-medium">Tu rating (0-10)</label>
-            <input type="number" id="formRating" min="0" max="10" step="0.5"
-              class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40"
-              placeholder="8.5" />
+            <input type="number" id="formRating" min="0" max="10" step="0.5" class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40" placeholder="8.5" />
           </div>
         </div>
-
         <div class="flex items-center gap-3 py-1">
           <input type="checkbox" id="formHentai" class="w-4 h-4 rounded accent-accent-pink cursor-pointer" />
           <label for="formHentai" class="text-sm text-gray-300 cursor-pointer select-none">Es hentai / NSFW</label>
         </div>
-
         <div>
-          <label class="block text-sm text-gray-400 mb-1.5 font-medium">Notas / opinión</label>
-          <textarea id="formNotes" rows="3"
-            class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 resize-none"
-            placeholder="Qué te gustó, favoritos, etc."></textarea>
+          <label class="block text-sm text-gray-400 mb-1.5 font-medium">Notas</label>
+          <textarea id="formNotes" rows="3" class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 resize-none" placeholder="Opinión, favoritos..."></textarea>
         </div>
-
-        <!-- Info from MAL (read-only when editing) -->
         <div id="malInfo" class="hidden bg-dark-900/60 border border-dark-600/50 rounded-xl p-4 space-y-2 text-sm">
-          <div class="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-wider">
-            <span>Datos de MyAnimeList</span>
-          </div>
+          <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Datos de MyAnimeList</div>
           <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-gray-300">
             <div><span class="text-gray-500">Score MAL:</span> <span id="infoScore">—</span></div>
             <div><span class="text-gray-500">Episodios:</span> <span id="infoEpisodes">—</span></div>
@@ -213,22 +201,48 @@
           </div>
           <p id="infoSynopsis" class="text-gray-400 text-xs leading-relaxed line-clamp-3 mt-1"></p>
         </div>
-
         <div class="flex gap-3 pt-2">
-          <button type="submit" id="btnSave"
-            class="flex-1 bg-gradient-to-r from-accent-pink to-accent-purple text-white py-2.5 rounded-xl font-semibold hover:opacity-90 active:scale-[0.99] transition shadow-lg shadow-accent-purple/20">
-            Guardar
-          </button>
-          <button type="button" id="btnDelete"
-            class="hidden px-4 py-2.5 bg-red-500/15 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/25 transition font-medium">
-            Eliminar
-          </button>
+          <button type="submit" id="btnSave" class="flex-1 bg-gradient-to-r from-accent-pink to-accent-purple text-white py-2.5 rounded-xl font-semibold hover:opacity-90 transition">Guardar</button>
+          <button type="button" id="btnDelete" class="hidden px-4 py-2.5 bg-red-500/15 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/25 transition font-medium">Eliminar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Toast -->
+  <!-- Modal Import -->
+  <div id="importModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+    <div class="bg-dark-800 border border-dark-600/80 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in overflow-hidden max-h-[92vh] flex flex-col">
+      <div class="px-6 py-4 border-b border-dark-600/60 flex items-center justify-between shrink-0">
+        <h2 class="text-lg font-semibold">Importar lista de animes</h2>
+        <button id="importClose" class="text-gray-400 hover:text-white transition p-1.5 rounded-lg hover:bg-dark-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto">
+        <p class="text-sm text-gray-400">Pega los títulos, <strong class="text-gray-300">uno por línea</strong>. Si termina en <code class="bg-dark-700 px-1 rounded text-xs">(h)</code> se marca como hentai.</p>
+        <textarea id="importText" rows="12"
+          class="w-full bg-dark-700/80 border border-dark-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-purple/40 resize-none font-mono"
+          placeholder="Death Note&#10;Shingeki No Kyojin&#10;One Punch Man (h)"></textarea>
+        <div class="flex items-center gap-3">
+          <label class="text-sm text-gray-400">Categoría:</label>
+          <select id="importCategory" class="bg-dark-700 border border-dark-600 rounded-xl px-3 py-2 text-sm flex-1"></select>
+        </div>
+        <div id="importProgress" class="hidden text-sm text-gray-400">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-4 h-4 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin"></div>
+            <span id="importStatus">Importando...</span>
+          </div>
+          <div class="w-full bg-dark-700 rounded-full h-2">
+            <div id="importBar" class="bg-gradient-to-r from-accent-pink to-accent-purple h-2 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+        <button id="btnDoImport" class="w-full bg-gradient-to-r from-accent-pink to-accent-purple text-white py-3 rounded-xl font-semibold hover:opacity-90 transition">
+          Importar animes
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="fixed bottom-6 right-6 z-[110] hidden">
     <div class="bg-dark-800 border border-dark-600 text-sm px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up">
       <span id="toastIcon" class="text-lg">✅</span>
