@@ -141,3 +141,52 @@ textarea:focus-visible {
   outline: 2px solid rgba(168, 85, 247, 0.5);
   outline-offset: 2px;
 }
+
+/* Status badge top-right, hentai below */
+.anime-card .badge {
+  top: 0.4rem;
+  right: 0.4rem;
+  left: auto;
+  font-size: 0.6rem;
+  z-index: 2;
+}
+.badge-hentai {
+  background: rgba(220, 38, 38, 0.88) !important;
+}
+
+/* Modal open */
+#modal.open, #importModal.open, #profileModal.open, #statsModal.open {
+  display: flex;
+}
+
+/* Light mode basic overrides */
+html:not(.dark) body {
+  background: #f3f4f6;
+  color: #111827;
+}
+html:not(.dark) .bg-dark-800,
+html:not(.dark) .bg-dark-800\/80,
+html:not(.dark) .bg-dark-800\/60 {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .border-dark-600,
+html:not(.dark) .border-dark-600\/80,
+html:not(.dark) .border-dark-600\/40 {
+  border-color: #e5e7eb !important;
+}
+html:not(.dark) .bg-dark-700,
+html:not(.dark) .bg-dark-700\/80 {
+  background-color: #f9fafb !important;
+}
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.scrollbar-thin::-webkit-scrollbar { height: 4px; }
